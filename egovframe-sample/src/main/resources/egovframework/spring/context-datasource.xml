@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/jdbc
+		http://www.springframework.org/schema/jdbc/spring-jdbc.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<!-- ============================================================= -->
+	<!-- Default profile: HSQLDB in-memory (runs offline, no external DB) -->
+	<!-- Activated when no profile is set (see spring.profiles.default). -->
+	<!-- ============================================================= -->
+	<beans profile="hsql">
+		<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+			<property name="driverClassName" value="org.hsqldb.jdbcDriver" />
+			<property name="url" value="jdbc:hsqldb:mem:sampledb" />
+			<property name="username" value="sa" />
+			<property name="password" value="" />
+		</bean>
+
+		<!-- create schema + seed data on startup (HSQLDB only) -->
+		<jdbc:initialize-database data-source="dataSource" ignore-failures="DROPS">
+			<jdbc:script location="classpath:db/schema-hsql.sql" />
+			<jdbc:script location="classpath:db/data-hsql.sql" />
+		</jdbc:initialize-database>
+	</beans>
+
+	<!-- ============================================================= -->
+	<!-- Oracle profile: run with -Dspring.profiles.active=oracle       -->
+	<!-- Credentials come from classpath:oracle.properties.             -->
+	<!-- NO auto DDL here: run db/oracle/*.sql on your DB beforehand.    -->
+	<!-- ============================================================= -->
+	<beans profile="oracle">
+		<context:property-placeholder location="classpath:oracle.properties"
+			ignore-resource-not-found="false" />
+
+		<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+			<property name="driverClassName" value="${oracle.driverClassName}" />
+			<property name="url" value="${oracle.url}" />
+			<property name="username" value="${oracle.username}" />
+			<property name="password" value="${oracle.password}" />
+			<property name="initialSize" value="${oracle.pool.initialSize}" />
+			<property name="maxActive" value="${oracle.pool.maxActive}" />
+			<property name="maxIdle" value="${oracle.pool.maxIdle}" />
+			<property name="validationQuery" value="SELECT 1 FROM DUAL" />
+			<property name="testOnBorrow" value="true" />
+		</bean>
+	</beans>
+
+</beans>

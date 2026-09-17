@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.example.cmm.security.ApiClientMapper">
+
+	<resultMap id="apiClientResult" type="egovframework.example.cmm.security.ApiClientVO">
+		<result property="apiKey" column="API_KEY" />
+		<result property="secret" column="SECRET" />
+		<result property="useYn" column="USE_YN" />
+		<result property="clientName" column="CLIENT_NAME" />
+	</resultMap>
+
+	<select id="selectAllClients" resultMap="apiClientResult">
+		SELECT API_KEY, SECRET, USE_YN, CLIENT_NAME
+		FROM API_CLIENT
+	</select>
+
+	<select id="selectAllClientIps" resultType="map">
+		SELECT API_KEY AS apiKey, CIDR AS cidr
+		FROM API_CLIENT_IP
+	</select>
+
+</mapper>

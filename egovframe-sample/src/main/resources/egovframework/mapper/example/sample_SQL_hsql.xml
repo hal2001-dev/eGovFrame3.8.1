@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.example.sample.service.impl.SampleMapper">
+
+	<resultMap id="sampleResult" type="sampleVO">
+		<result property="id" column="ID" />
+		<result property="name" column="NAME" />
+		<result property="description" column="DESCRIPTION" />
+		<result property="useYn" column="USE_YN" />
+		<result property="regUser" column="REG_USER" />
+	</resultMap>
+
+	<select id="selectSampleList" parameterType="sampleDefaultVO" resultMap="sampleResult">
+		SELECT ID, NAME, DESCRIPTION, USE_YN, REG_USER
+		FROM SAMPLE
+		<where>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				<choose>
+					<when test="searchCondition == '0'">
+						AND NAME LIKE '%' || #{searchKeyword} || '%'
+					</when>
+					<when test="searchCondition == '1'">
+						AND DESCRIPTION LIKE '%' || #{searchKeyword} || '%'
+					</when>
+					<otherwise>
+						AND ( NAME LIKE '%' || #{searchKeyword} || '%'
+						   OR DESCRIPTION LIKE '%' || #{searchKeyword} || '%' )
+					</otherwise>
+				</choose>
+			</if>
+		</where>
+		ORDER BY ID DESC
+	</select>
+
+	<select id="selectSampleListTotCnt" parameterType="sampleDefaultVO" resultType="int">
+		SELECT COUNT(*) AS totcnt
+		FROM SAMPLE
+		<where>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				<choose>
+					<when test="searchCondition == '0'">
+						AND NAME LIKE '%' || #{searchKeyword} || '%'
+					</when>
+					<when test="searchCondition == '1'">
+						AND DESCRIPTION LIKE '%' || #{searchKeyword} || '%'
+					</when>
+					<otherwise>
+						AND ( NAME LIKE '%' || #{searchKeyword} || '%'
+						   OR DESCRIPTION LIKE '%' || #{searchKeyword} || '%' )
+					</otherwise>
+				</choose>
+			</if>
+		</where>
+	</select>
+
+	<select id="selectSample" parameterType="string" resultMap="sampleResult">
+		SELECT ID, NAME, DESCRIPTION, USE_YN, REG_USER
+		FROM SAMPLE
+		WHERE ID = #{id}
+	</select>
+
+	<insert id="insertSample" parameterType="sampleVO">
+		INSERT INTO SAMPLE (ID, NAME, DESCRIPTION, USE_YN, REG_USER)
+		VALUES (#{id}, #{name}, #{description}, #{useYn}, #{regUser})
+	</insert>
+
+	<update id="updateSample" parameterType="sampleVO">
+		UPDATE SAMPLE
+		SET NAME = #{name},
+			DESCRIPTION = #{description},
+			USE_YN = #{useYn},
+			REG_USER = #{regUser}
+		WHERE ID = #{id}
+	</update>
+
+	<delete id="deleteSample" parameterType="string">
+		DELETE FROM SAMPLE WHERE ID = #{id}
+	</delete>
+
+</mapper>

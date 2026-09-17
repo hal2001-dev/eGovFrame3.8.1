@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+	<!--
+	  eGovFrame maven repository blocks non-browser User-Agents, so we send a
+	  browser UA for that server. Repository id must match pom.xml (egovframe).
+	-->
+	<servers>
+		<server>
+			<id>egovframe</id>
+			<configuration>
+				<httpHeaders>
+					<property>
+						<name>User-Agent</name>
+						<value>Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36</value>
+					</property>
+				</httpHeaders>
+			</configuration>
+		</server>
+	</servers>
+</settings>
