@@ -10,23 +10,17 @@
 		http://www.springframework.org/schema/tx
 		http://www.springframework.org/schema/tx/spring-tx.xsd">
 
+	<!-- 기본 DB 트랜잭션 매니저 -->
 	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
 		<property name="dataSource" ref="dataSource" />
 	</bean>
 
-	<tx:advice id="txAdvice" transaction-manager="txManager">
-		<tx:attributes>
-			<tx:method name="*" rollback-for="Exception" />
-		</tx:attributes>
-	</tx:advice>
-
-	<!-- primary(기본 DB) 트랜잭션: 서비스 구현체에 적용.
-	     단, 두 번째 DB(secondary)는 자기 트랜잭션 매니저(txManager2)를 쓰므로 제외한다.
-	     (secondary AOP 는 context-datasource-secondary.xml 에 별도 정의) -->
-	<aop:config>
-		<aop:pointcut id="serviceMethod"
-			expression="execution(* egovframework.example..service.impl.*Impl.*(..)) &amp;&amp; !within(egovframework.example.secondary..*)" />
-		<aop:advisor advice-ref="txAdvice" pointcut-ref="serviceMethod" />
-	</aop:config>
+	<!--
+	  애노테이션 기반 트랜잭션. @Transactional 이 붙은 빈에 트랜잭션을 적용한다.
+	  기본 트랜잭션 매니저는 txManager(기본 DB). 두 번째 DB 서비스는
+	  @Transactional("txManager2") 로 매니저를 지정하면 패키지와 무관하게 라우팅된다.
+	  (tx:annotation-driven 은 앱 전체에서 하나만 선언한다)
+	-->
+	<tx:annotation-driven transaction-manager="txManager" proxy-target-class="false" />
 
 </beans>

@@ -7,6 +7,7 @@ import javax.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import egovframework.example.sample.service.EgovSampleService;
 import egovframework.example.sample.service.SampleDefaultVO;
@@ -22,8 +23,13 @@ import egovframework.example.sample.service.SampleVO;
  *
  * <p>{@code @Service("egovSampleService")} 로 스프링 빈으로 등록되며,
  * 컨트롤러에서 {@code @Resource(name="egovSampleService")} 로 주입받습니다.</p>
+ *
+ * <p>트랜잭션은 클래스 레벨 {@code @Transactional} 로 적용됩니다. 트랜잭션 매니저를
+ * 지정하지 않았으므로 기본값(txManager, 기본 DB)이 사용됩니다.
+ * (두 번째 DB 서비스는 {@code @Transactional("txManager2")} 로 지정)</p>
  */
 @Service("egovSampleService")
+@Transactional
 public class EgovSampleServiceImpl implements EgovSampleService {
 
 	/** 로거 (SLF4J → Log4j2 로 연결됨) */

@@ -53,20 +53,10 @@
 	</bean>
 
 	<!-- (4) 두 번째 트랜잭션 매니저 -->
+	<!--     서비스에서 @Transactional("txManager2") 로 지정하면 이 매니저가 적용된다. -->
+	<!--     (트랜잭션 적용은 context-transaction.xml 의 tx:annotation-driven 이 담당) -->
 	<bean id="txManager2" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
 		<property name="dataSource" ref="dataSource2" />
 	</bean>
-
-	<!-- secondary 서비스 트랜잭션 AOP : secondary 구현체는 txManager2 로 -->
-	<tx:advice id="txAdvice2" transaction-manager="txManager2">
-		<tx:attributes>
-			<tx:method name="*" rollback-for="Exception" />
-		</tx:attributes>
-	</tx:advice>
-	<aop:config>
-		<aop:pointcut id="secondaryServiceMethod"
-			expression="execution(* egovframework.example.secondary..service.impl.*Impl.*(..))" />
-		<aop:advisor advice-ref="txAdvice2" pointcut-ref="secondaryServiceMethod" />
-	</aop:config>
 
 </beans>

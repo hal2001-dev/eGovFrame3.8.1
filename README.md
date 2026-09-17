@@ -285,7 +285,11 @@ Spring 프로파일로 데이터소스만 바뀌며, **매퍼 SQL은 그대로 �
   - 마커 애노테이션: `egovframework.example.cmm.annotation.SecondaryMapper`
   - 두 번째 DB 매퍼(`ProductMapper`)에는 `@Mapper` 대신 `@SecondaryMapper` 를 붙입니다.
   - (대안) 패키지로 나누고 싶으면 각 스캐너의 `basePackage` 를 서로 겹치지 않게 지정해도 됩니다.
-- 트랜잭션도 secondary 구현체(`...secondary..service.impl.*Impl`)는 `txManager2` 로, 나머지는 `txManager` 로 AOP 를 나눴습니다.
+- **트랜잭션(서비스)도 애노테이션으로 분리**합니다. `<tx:annotation-driven transaction-manager="txManager"/>` 하나만 선언하고,
+  - 기본 DB 서비스: `@Transactional` (기본값 = `txManager`)
+  - 두 번째 DB 서비스: `@Transactional("txManager2")`
+  이렇게 하면 매퍼(@SecondaryMapper)처럼 서비스도 **패키지에 매이지 않고** DS별 트랜잭션 매니저가 지정됩니다. (기존 패키지 기반 AOP 는 제거)
+  > 주의: 서로 다른 두 트랜잭션 매니저는 **각각 독립 트랜잭션**입니다. 한 트랜잭션으로 두 DB 를 묶으려면 JTA/XA(분산 트랜잭션)가 별도로 필요합니다.
 
 확인:
 ```bash
