@@ -26,6 +26,7 @@ JSP 화면 CRUD, JSON REST API, HMAC 서버-투-서버 인증, IP 화이트리�
 16. [업무별 폴더 구조 가이드](#16-업무별-폴더-구조-가이드)
 17. [검증 결과 요약](#17-검증-결과-요약)
 18. [설계 논의 & FAQ (계속 업데이트)](#18-설계-논의--faq-계속-업데이트)
+19. [SSO 인증 필터 (샘플)](#19-sso-인증-필터-샘플)
 
 ---
 
@@ -304,6 +305,7 @@ egovframework/example/
 | 필터 분리 | 웹=WebCommonFilter, /api=HMAC 만 적용 |
 | 멀티 DS | 한 요청에서 두 DB 조회, 쓰기 커밋(count 3→4) |
 | 클라이언트 샘플 | 서버 호출 전 시나리오 통과 |
+| SSO 인증 필터 | 미인증 302, 토큰/세션 200, 로그아웃 302, /action·/api 회귀 정상 |
 
 ## 18. 설계 논의 & FAQ (계속 업데이트)
 
@@ -340,13 +342,52 @@ egovframework/example/
 → 가능. AOP 지시자 `@within(@마커)`(클래스) / `@annotation(@마커)`(메서드)로 어드바이스를 나눔. `tx:annotation-driven` 방식과는 둘 중 하나만 사용. → [13장](#13-트랜잭션-분리-방식)
 
 **Q. SSO 인증 처리는 Filter vs Interceptor 어디에?**
-→ **인증(신원 확인)은 Filter**(모든 요청 커버, 컨트롤러 이전 차단·IdP 리다이렉트, SSO 제품/Spring Security가 필터). **인가(권한·메뉴)는 Interceptor**(핸들러 정보 활용). 규모가 크면 Spring Security 권장.
+→ **인증(신원 확인)은 Filter**(모든 요청 커버, 컨트롤러 이전 차단·IdP 리다이렉트, SSO 제품/Spring Security가 필터). **인가(권한·메뉴)는 Interceptor**(핸들러 정보 활용). 규모가 크면 Spring Security 권장. 구현 샘플 → [19장](#19-sso-인증-필터-샘플)
 
 **Q. 업무별 폴더 구조는?**
 → 업무(도메인) 우선(package-by-feature): 최상위를 업무로 나누고 그 안에 web/service/impl. 공통은 `cmm` 최소화. → [16장](#16-업무별-폴더-구조-가이드)
 
 **Q. 오프라인에서 Maven이 m2-repo를 참조하게 하려면? SVN 공유는?**
 → `mvn -o -Dmaven.repo.local=…/m2-repo`, 또는 `settings.xml`의 `<localRepository>`+offline, 또는 `~/.m2/repository`에 병합. Maven을 안 쓰면 `WEB-INF/lib` 참조 Dynamic Web Project. → [15장](#15-형상관리-git--svn--릴리스)
+
+## 19. SSO 인증 필터 (샘플)
+
+인증(신원 확인)은 **필터**에서 처리하는 정석 예제입니다. 기존 웹(`/action/*`)·REST(`/api/*`)를
+건드리지 않도록 **데모 보호 영역 `/secure/*`** 에 적용했습니다(실무에선 `/action/*` 에 매핑).
+
+### 구성 (`egovframework.example.cmm.sso`)
+| 파일 | 역할 |
+|------|------|
+| `SsoAuthFilter` | 세션 확인 → SSO 토큰 검증 → 미인증 시 로그인 리다이렉트 (OncePerRequestFilter) |
+| `SsoTokenValidator` (인터페이스) | 토큰 검증 확장 지점(SPI) |
+| `DemoSsoTokenValidator` (@Service) | 데모 구현 — `demo-token-<id>` 를 유효 토큰으로 처리. **실무에선 교체** |
+| `SsoUser` | 인증 사용자(세션 저장) |
+| `web/SsoLoginController` | `/sso/login`(GET/POST), `/sso/logout` — 데모 로그인 |
+| `web/SecureController` | `/secure/home.do` — 보호 영역 진입 확인(JSON) |
+
+`web.xml`: `ssoAuthFilter` 를 `/secure/*` 에 매핑(로그인 `/sso/*` 는 매핑 밖이라 공개).
+
+### 동작
+1. 세션에 인증 사용자(`ssoUser`)가 있으면 통과
+2. 없으면 SSO 토큰(파라미터 `ssoToken` 또는 헤더 `X-SSO-Token`)을 검증 → 성공 시 세션 저장 후 통과
+3. 둘 다 없으면 `/sso/login?returnUrl=…` 로 리다이렉트
+
+```bash
+# 미인증 → 로그인 리다이렉트
+curl -i http://localhost:8080/secure/home.do            # 302 → /sso/login?returnUrl=...
+# 토큰으로 접근(세션 생성)
+curl -c cj http://localhost:8080/secure/home.do?ssoToken=demo-token-alice   # 200 {userId:"alice", ...}
+# 세션 쿠키로 재접근
+curl -b cj http://localhost:8080/secure/home.do          # 200
+# 로그아웃
+curl -b cj http://localhost:8080/sso/logout              # 302 → /sso/login
+```
+
+### 실무 적용 시
+- `DemoSsoTokenValidator` 를 실제 SSO 검증(SAML Assertion, OAuth2/OIDC introspection, 기관 SSO 에이전트 API)으로 교체.
+- 로그인 화면 대신 **IdP 리다이렉트 + 콜백 토큰 검증** 흐름으로 변경.
+- 필터 매핑을 실제 웹 경로(`/action/*`)로. 인증 이후의 **권한(인가)** 은 `HandlerInterceptor` 로 분리([FAQ](#18-설계-논의--faq-계속-업데이트)).
+- 규모가 크면 **Spring Security** 로 통합(SSO/SAML/OAuth2, URL·메서드 권한, CSRF).
 
 ---
 _이 문서는 프로젝트 진행 내역과 설계 논의를 정리한 위키입니다. 세부 사용법은 저장소 루트 `README.md` 를 함께 참고하세요. (18장은 대화 진행에 따라 계속 갱신)_
