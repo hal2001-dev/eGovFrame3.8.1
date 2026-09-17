@@ -347,6 +347,9 @@ egovframework/example/
 **Q. 업무별 폴더 구조는?**
 → 업무(도메인) 우선(package-by-feature): 최상위를 업무로 나누고 그 안에 web/service/impl. 공통은 `cmm` 최소화. → [16장](#16-업무별-폴더-구조-가이드)
 
+**Q. 기존 `org.json.simple.JSONObject`(json-simple) 파싱을 대체하려면?**
+→ 이미 있는 **Jackson** 사용(새 의존성 불필요). json-simple의 `JSONObject`는 HashMap 상속이라, key/value면 **`Map<String,Object>` 로 파싱**하면 사용법이 거의 그대로. 공통 헬퍼 **`egovframework.example.cmm.util.EgovJsonUtil`** 제공: `toMap(json)`, `toList(json)`, `toJson(obj)`, `toObject(json, Vo.class)`, `readTree(json)`(재사용 ObjectMapper 내장, 예외 래핑). 캐스팅 많거나 중첩 깊으면 `readTree`(JsonNode), 고정 구조면 POJO 권장.
+
 **Q. `BouncyCastleProvider` 오류가 난다 (기존 소스가 BC 사용)**
 → 기본 샘플은 순수 JDK `javax.crypto`만 써서 BC가 없음. 기존/추가 소스가 BC를 쓰면 **bcprov jar**를 넣어야 함.
 JDK 1.8은 `org.bouncycastle:bcprov-jdk15on:1.70` 추가(오프라인이면 온라인에서 한 번 받아 `m2-repo`에 반영 후 재빌드). 오류별:
