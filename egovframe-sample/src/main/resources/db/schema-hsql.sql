@@ -1,3 +1,5 @@
+-- HSQLDB 인메모리용 스키마 (기동 시 자동 실행됨)
+-- 게시판 샘플 테이블
 DROP TABLE SAMPLE IF EXISTS;
 
 CREATE TABLE SAMPLE (
@@ -9,7 +11,8 @@ CREATE TABLE SAMPLE (
     CONSTRAINT PK_SAMPLE PRIMARY KEY (ID)
 );
 
--- REST API clients (HMAC credentials) managed in DB
+-- DB 에서 관리하는 REST API 클라이언트(HMAC 자격증명)
+-- 자식(API_CLIENT_IP)을 먼저 DROP 해야 외래키 제약에 걸리지 않음
 DROP TABLE API_CLIENT_IP IF EXISTS;
 DROP TABLE API_CLIENT IF EXISTS;
 
@@ -21,7 +24,7 @@ CREATE TABLE API_CLIENT (
     CONSTRAINT PK_API_CLIENT PRIMARY KEY (API_KEY)
 );
 
--- allowed source IP ranges per client (CIDR). No rows for a client = no IP restriction.
+-- 클라이언트별 허용 출발지 IP 대역(CIDR). 행이 없는 클라이언트는 IP 제한 없음.
 CREATE TABLE API_CLIENT_IP (
     API_KEY VARCHAR(50) NOT NULL,
     CIDR    VARCHAR(50) NOT NULL,

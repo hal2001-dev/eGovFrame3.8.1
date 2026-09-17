@@ -1,5 +1,5 @@
 -- =====================================================================
---  Optional seed data for Oracle. CHANGE the secrets before real use.
+--  Oracle 시드 데이터(선택). 실제 사용 전에 비밀키(SECRET)를 반드시 교체하세요.
 -- =====================================================================
 
 INSERT INTO SAMPLE (ID, NAME, DESCRIPTION, USE_YN, REG_USER) VALUES ('1000000001', '전자정부 표준프레임워크', 'eGovFrame 3.8 sample seed data', 'Y', 'admin');

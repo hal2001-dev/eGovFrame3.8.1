@@ -11,8 +11,9 @@
 		http://www.springframework.org/schema/context/spring-context.xsd">
 
 	<!-- ============================================================= -->
-	<!-- Default profile: HSQLDB in-memory (runs offline, no external DB) -->
-	<!-- Activated when no profile is set (see spring.profiles.default). -->
+	<!-- 기본(hsql) 프로파일: HSQLDB 인메모리 (외부 DB 없이 오프라인 구동)      -->
+	<!-- 활성 프로파일을 지정하지 않으면 이 프로파일이 사용됩니다               -->
+	<!-- (web.xml 의 spring.profiles.default=hsql 참고).                   -->
 	<!-- ============================================================= -->
 	<beans profile="hsql">
 		<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
@@ -22,7 +23,7 @@
 			<property name="password" value="" />
 		</bean>
 
-		<!-- create schema + seed data on startup (HSQLDB only) -->
+		<!-- 기동 시 스키마 생성 + 시드 데이터 적재 (HSQLDB 전용) -->
 		<jdbc:initialize-database data-source="dataSource" ignore-failures="DROPS">
 			<jdbc:script location="classpath:db/schema-hsql.sql" />
 			<jdbc:script location="classpath:db/data-hsql.sql" />
@@ -30,9 +31,10 @@
 	</beans>
 
 	<!-- ============================================================= -->
-	<!-- Oracle profile: run with -Dspring.profiles.active=oracle       -->
-	<!-- Credentials come from classpath:oracle.properties.             -->
-	<!-- NO auto DDL here: run db/oracle/*.sql on your DB beforehand.    -->
+	<!-- oracle 프로파일: -Dspring.profiles.active=oracle 로 기동            -->
+	<!-- 접속정보는 classpath:oracle.properties 에서 읽습니다.               -->
+	<!-- 여기서는 DDL 을 자동 실행하지 않습니다(운영 DB 보호):               -->
+	<!-- 사전에 db/oracle/*.sql 을 직접 실행하세요.                         -->
 	<!-- ============================================================= -->
 	<beans profile="oracle">
 		<context:property-placeholder location="classpath:oracle.properties"

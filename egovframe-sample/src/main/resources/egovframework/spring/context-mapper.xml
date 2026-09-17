@@ -4,14 +4,15 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans.xsd">
 
-	<!-- MyBatis SqlSessionFactory -->
+	<!-- MyBatis SqlSessionFactory: 데이터소스 + 전역 설정 + 매퍼 XML 위치 지정 -->
 	<bean id="sqlSession" class="org.mybatis.spring.SqlSessionFactoryBean">
 		<property name="dataSource" ref="dataSource" />
 		<property name="configLocation" value="classpath:egovframework/mapper/sql-mapper-config.xml" />
 		<property name="mapperLocations" value="classpath:egovframework/mapper/example/*.xml" />
 	</bean>
 
-	<!-- Scan @Mapper interfaces -->
+	<!-- @Mapper 애노테이션이 붙은 인터페이스를 스캔해 매퍼 빈으로 자동 등록 -->
+	<!-- basePackage 하위에서 @Mapper 인터페이스만 등록하므로 위치와 무관하게 인식됨 -->
 	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
 		<property name="basePackage" value="egovframework.example" />
 		<property name="annotationClass" value="org.apache.ibatis.annotations.Mapper" />

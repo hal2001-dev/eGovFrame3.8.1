@@ -26,24 +26,38 @@ import egovframework.example.sample.service.SampleDefaultVO;
 import egovframework.example.sample.service.SampleVO;
 
 /**
- * REST API for the sample resource. Returns/consumes JSON.
+ * 샘플(게시판) REST API 컨트롤러. 요청/응답을 JSON 으로 처리한다.
+ *
+ * <p>서버-투-서버(외부 시스템 연계)용 엔드포인트로, {@code /api/*} 경로는 별도의
+ * HMAC 인증 필터({@code egovframework.example.cmm.security.HmacAuthFilter})로 보호됩니다.
+ * 따라서 이 컨트롤러 자체에는 인증 코드가 없고 순수 CRUD 로직만 담습니다.</p>
+ *
+ * <p>{@code @RestController} 는 모든 메서드 반환값을 (뷰가 아니라) 응답 본문으로
+ * 직렬화하며, Jackson 이 객체 ↔ JSON 변환을 담당합니다.</p>
  *
  * <pre>
- *  GET    /api/samples            list (optional ?searchCondition=&searchKeyword=)
- *  GET    /api/samples/{id}       read one
- *  POST   /api/samples            create
- *  PUT    /api/samples/{id}       update
- *  DELETE /api/samples/{id}       delete
+ *  GET    /api/samples            목록 조회 (?searchCondition=&amp;searchKeyword=)
+ *  GET    /api/samples/{id}       단건 조회
+ *  POST   /api/samples            생성
+ *  PUT    /api/samples/{id}       수정
+ *  DELETE /api/samples/{id}       삭제
  * </pre>
  */
 @RestController
 @RequestMapping("/api/samples")
 public class EgovSampleApiController {
 
+	/** 샘플 업무 서비스 (화면 컨트롤러와 동일한 서비스 재사용) */
 	@Resource(name = "egovSampleService")
 	private EgovSampleService egovSampleService;
 
-	/** list (with optional search) */
+	/**
+	 * 목록 조회. 검색어가 있으면 이름/설명으로 LIKE 검색한다.
+	 *
+	 * @param searchCondition 검색 구분(0:이름, 1:설명, 그 외:전체)
+	 * @param searchKeyword   검색어
+	 * @return {@code {"totalCount": 총건수, "list": [ ... ]}} 형태의 JSON
+	 */
 	@GetMapping
 	public Map<String, Object> list(
 			@RequestParam(value = "searchCondition", required = false, defaultValue = "") String searchCondition,
@@ -60,13 +74,20 @@ public class EgovSampleApiController {
 		return body;
 	}
 
-	/** read one */
+	/**
+	 * 단건 조회. 존재하지 않으면 서비스가 예외를 던지고,
+	 * {@link #handleNotFound} 가 404 로 변환한다.
+	 */
 	@GetMapping("/{id}")
 	public SampleVO get(@PathVariable("id") String id) throws Exception {
 		return egovSampleService.selectSample(id);
 	}
 
-	/** create */
+	/**
+	 * 생성. 생성된 리소스를 본문으로, Location 헤더에 상세 URL 을 담아 201 로 응답한다.
+	 *
+	 * @param sampleVO 요청 본문(JSON)에서 바인딩된 게시글
+	 */
 	@PostMapping
 	public ResponseEntity<SampleVO> create(@RequestBody SampleVO sampleVO) throws Exception {
 		String id = egovSampleService.insertSample(sampleVO);
@@ -76,24 +97,30 @@ public class EgovSampleApiController {
 		return ResponseEntity.created(location).body(created);
 	}
 
-	/** update */
+	/**
+	 * 수정. 먼저 존재 여부를 확인(없으면 404)하고, 경로의 ID 를 본문에 강제로 세팅해
+	 * 경로-본문 ID 불일치를 방지한다.
+	 */
 	@PutMapping("/{id}")
 	public SampleVO update(@PathVariable("id") String id, @RequestBody SampleVO sampleVO) throws Exception {
-		egovSampleService.selectSample(id); // 404 if not found
+		egovSampleService.selectSample(id); // 없으면 404
 		sampleVO.setId(id);
 		egovSampleService.updateSample(sampleVO);
 		return egovSampleService.selectSample(id);
 	}
 
-	/** delete */
+	/** 삭제. 존재 여부 확인 후 삭제하고 204(No Content)로 응답한다. */
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Void> delete(@PathVariable("id") String id) throws Exception {
-		egovSampleService.selectSample(id); // 404 if not found
+		egovSampleService.selectSample(id); // 없으면 404
 		egovSampleService.deleteSample(id);
 		return ResponseEntity.noContent().build();
 	}
 
-	/** unknown id -> 404 with a small JSON body */
+	/**
+	 * 존재하지 않는 ID 접근 시 발생하는 예외를 404 JSON 응답으로 변환한다.
+	 * (서비스가 {@link IllegalArgumentException} 을 던진다.)
+	 */
 	@ExceptionHandler(IllegalArgumentException.class)
 	public ResponseEntity<Map<String, Object>> handleNotFound(IllegalArgumentException e) {
 		Map<String, Object> body = new HashMap<String, Object>();

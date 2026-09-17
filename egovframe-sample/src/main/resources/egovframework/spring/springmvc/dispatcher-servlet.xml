@@ -10,18 +10,19 @@
 		http://www.springframework.org/schema/mvc
 		http://www.springframework.org/schema/mvc/spring-mvc.xsd">
 
-	<!-- Scan controllers only -->
+	<!-- 컨트롤러만 스캔 (@Controller / @RestController). 기본 필터는 끄고 컨트롤러만 포함 -->
 	<context:component-scan base-package="egovframework.example" use-default-filters="false">
 		<context:include-filter type="annotation"
 			expression="org.springframework.stereotype.Controller" />
 	</context:component-scan>
 
+	<!-- 애노테이션 기반 MVC 활성화 (@RequestMapping, JSON 변환기 등록 등) -->
 	<mvc:annotation-driven />
 
-	<!-- Let the container default servlet serve static resources (css/js/img) -->
+	<!-- 정적 리소스(css/js/img)는 컨테이너 기본 서블릿이 처리하도록 위임 -->
 	<mvc:default-servlet-handler />
 
-	<!-- JSP view resolver -->
+	<!-- JSP 뷰 리졸버: 뷰 이름 앞뒤에 prefix/suffix 를 붙여 실제 JSP 경로로 forward -->
 	<bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
 		<property name="prefix" value="/WEB-INF/jsp/" />
 		<property name="suffix" value=".jsp" />

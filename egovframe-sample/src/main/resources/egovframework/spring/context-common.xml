@@ -7,7 +7,7 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context.xsd">
 
-	<!-- Scan services (controllers are scanned by the dispatcher servlet context) -->
+	<!-- 서비스 계층 스캔 (컨트롤러는 DispatcherServlet 컨텍스트에서 스캔하므로 여기서 제외) -->
 	<context:component-scan base-package="egovframework.example">
 		<context:include-filter type="annotation"
 			expression="org.springframework.stereotype.Service" />
@@ -15,6 +15,7 @@
 			expression="org.springframework.stereotype.Controller" />
 	</context:component-scan>
 
+	<!-- 메시지 소스(다국어/메시지 처리). classpath 의 프로퍼티 파일을 UTF-8 로 읽는다 -->
 	<bean id="messageSource"
 		class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
 		<property name="basenames">
