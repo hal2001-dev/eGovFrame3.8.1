@@ -21,7 +21,7 @@
 	<h1>eGovFrame 3.8 Sample &mdash; 게시판 목록</h1>
 	<p class="count">총 <strong>${resultCnt}</strong> 건</p>
 
-	<form action="<c:url value='/egovSampleList.do'/>" method="get" class="toolbar">
+	<form action="<c:url value='/action/sample/egovSampleList.do'/>" method="get" class="toolbar">
 		<select name="searchCondition">
 			<option value="">전체</option>
 			<option value="0" ${searchVO.searchCondition eq '0' ? 'selected' : ''}>이름</option>
@@ -29,7 +29,7 @@
 		</select>
 		<input type="text" name="searchKeyword" value="${searchVO.searchKeyword}" placeholder="검색어" />
 		<button type="submit">검색</button>
-		<a class="btn" href="<c:url value='/addSample.do'/>">신규 등록</a>
+		<a class="btn" href="<c:url value='/action/sample/addSample.do'/>">신규 등록</a>
 	</form>
 
 	<table>
@@ -55,9 +55,9 @@
 							<td><c:out value="${row.description}" /></td>
 							<td>${row.useYn}</td>
 							<td>
-								<a href="<c:url value='/updateSampleView.do?selectedId=${row.id}'/>">수정</a>
+								<a href="<c:url value='/action/sample/updateSampleView.do?selectedId=${row.id}'/>">수정</a>
 								|
-								<a href="<c:url value='/deleteSample.do?selectedId=${row.id}'/>"
+								<a href="<c:url value='/action/sample/deleteSample.do?selectedId=${row.id}'/>"
 									onclick="return confirm('삭제하시겠습니까?');">삭제</a>
 							</td>
 						</tr>

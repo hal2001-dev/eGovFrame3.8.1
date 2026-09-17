@@ -21,7 +21,7 @@
 <body>
 	<h1>eGovFrame 3.8 Sample &mdash; ${isEdit ? '수정' : '신규 등록'}</h1>
 
-	<form action="<c:url value='${isEdit ? "/updateSample.do" : "/addSample.do"}'/>" method="post">
+	<form action="<c:url value='${isEdit ? "/action/sample/updateSample.do" : "/action/sample/addSample.do"}'/>" method="post">
 		<c:if test="${isEdit}">
 			<input type="hidden" name="id" value="${sampleVO.id}" />
 		</c:if>
@@ -42,7 +42,7 @@
 
 		<div class="actions">
 			<button type="submit">${isEdit ? '수정' : '등록'}</button>
-			<a class="btn cancel" href="<c:url value='/egovSampleList.do'/>">취소</a>
+			<a class="btn cancel" href="<c:url value='/action/sample/egovSampleList.do'/>">취소</a>
 		</div>
 	</form>
 </body>

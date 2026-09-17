@@ -43,6 +43,16 @@
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 
+	<!-- 웹(화면) 전용 공통 필터 : /action/* 요청에만 동작 (REST 는 관여 안 함) -->
+	<filter>
+		<filter-name>webCommonFilter</filter-name>
+		<filter-class>egovframework.example.cmm.web.WebCommonFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>webCommonFilter</filter-name>
+		<url-pattern>/action/*</url-pattern>
+	</filter-mapping>
+
 	<!-- REST API(/api/*) 보호용 HMAC 인증 필터 (서버-투-서버) -->
 	<filter>
 		<filter-name>hmacAuthFilter</filter-name>
