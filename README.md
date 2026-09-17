@@ -277,11 +277,14 @@ Spring 프로파일로 데이터소스만 바뀌며, **매퍼 SQL은 그대로 �
 |------|---------------|--------------------|
 | DataSource | `dataSource` | `dataSource2` |
 | SqlSessionFactory | `sqlSession` (매퍼: `mapper/example/*.xml`) | `sqlSession2` (매퍼: `mapper/secondary/*.xml`) |
-| 매퍼 스캔 패키지 | `egovframework.example.sample`, `.cmm` | `egovframework.example.secondary` |
+| 매퍼 구분 애노테이션 | `@Mapper` (org.apache.ibatis) | `@SecondaryMapper` (커스텀 마커) |
 | 트랜잭션 매니저 | `txManager` | `txManager2` |
 
 - 설정 파일: 두 번째 DS 는 **`context-datasource-secondary.xml`** 한 곳에 모아 두었습니다(DataSource+Factory+스캐너+TxManager+AOP).
-- **매퍼 스캐너 범위가 겹치지 않게** 분리하는 것이 관건입니다(겹치면 매퍼가 어느 factory 에 붙을지 충돌). 그래서 primary 스캐너를 `sample,cmm` 로 좁혔습니다.
+- **매퍼 구분은 애노테이션으로** 합니다. 두 MapperScannerConfigurer 가 **같은 basePackage(`egovframework.example`)** 를 스캔하지만, primary 는 `annotationClass=@Mapper`, secondary 는 `annotationClass=@SecondaryMapper` 라서 서로 겹치지 않습니다. (패키지를 나눌 필요가 없어짐 → 같은 패키지에 두 DB 매퍼가 섞여도 안전)
+  - 마커 애노테이션: `egovframework.example.cmm.annotation.SecondaryMapper`
+  - 두 번째 DB 매퍼(`ProductMapper`)에는 `@Mapper` 대신 `@SecondaryMapper` 를 붙입니다.
+  - (대안) 패키지로 나누고 싶으면 각 스캐너의 `basePackage` 를 서로 겹치지 않게 지정해도 됩니다.
 - 트랜잭션도 secondary 구현체(`...secondary..service.impl.*Impl`)는 `txManager2` 로, 나머지는 `txManager` 로 AOP 를 나눴습니다.
 
 확인:

@@ -43,11 +43,12 @@
 		<property name="mapperLocations" value="classpath:egovframework/mapper/secondary/*.xml" />
 	</bean>
 
-	<!-- (3) secondary 매퍼 스캐너 : secondary 패키지만 스캔해 sqlSession2 에 바인딩 -->
-	<!--     (primary 스캐너는 egovframework.example.sample / .cmm 만 스캔하도록 분리되어 있음) -->
+	<!-- (3) secondary 매퍼 스캐너 : @SecondaryMapper 가 붙은 인터페이스만 sqlSession2 에 바인딩. -->
+	<!--     annotationClass 로 구분하므로 basePackage 가 primary 스캐너와 같아도(겹쳐도) 무방. -->
+	<!--     primary 스캐너는 @Mapper 만, 이 스캐너는 @SecondaryMapper 만 잡는다. -->
 	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
-		<property name="basePackage" value="egovframework.example.secondary" />
-		<property name="annotationClass" value="org.apache.ibatis.annotations.Mapper" />
+		<property name="basePackage" value="egovframework.example" />
+		<property name="annotationClass" value="egovframework.example.cmm.annotation.SecondaryMapper" />
 		<property name="sqlSessionFactoryBeanName" value="sqlSession2" />
 	</bean>
 
