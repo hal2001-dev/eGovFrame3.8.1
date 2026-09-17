@@ -347,6 +347,11 @@ egovframework/example/
 **Q. 업무별 폴더 구조는?**
 → 업무(도메인) 우선(package-by-feature): 최상위를 업무로 나누고 그 안에 web/service/impl. 공통은 `cmm` 최소화. → [16장](#16-업무별-폴더-구조-가이드)
 
+**Q. `BouncyCastleProvider` 오류가 난다 (기존 소스가 BC 사용)**
+→ 기본 샘플은 순수 JDK `javax.crypto`만 써서 BC가 없음. 기존/추가 소스가 BC를 쓰면 **bcprov jar**를 넣어야 함.
+JDK 1.8은 `org.bouncycastle:bcprov-jdk15on:1.70` 추가(오프라인이면 온라인에서 한 번 받아 `m2-repo`에 반영 후 재빌드). 오류별:
+`NoClassDefFoundError …BouncyCastleProvider`=jar 없음(의존성 추가), `NoSuchProviderException: no such provider: BC`=`Security.addProvider(new BouncyCastleProvider())` 등록 필요, `JCE cannot authenticate the provider BC`=jar 버전/중복 문제(JDK8엔 jdk15on 1.70, 중복 제거). PKIX/CMS/S-MIME까지 쓰면 `bcpkix-jdk15on` 도 추가.
+
 **Q. 오프라인에서 Maven이 m2-repo를 참조하게 하려면? SVN 공유는?**
 → `mvn -o -Dmaven.repo.local=…/m2-repo`, 또는 `settings.xml`의 `<localRepository>`+offline, 또는 `~/.m2/repository`에 병합. Maven을 안 쓰면 `WEB-INF/lib` 참조 Dynamic Web Project. → [15장](#15-형상관리-git--svn--릴리스)
 

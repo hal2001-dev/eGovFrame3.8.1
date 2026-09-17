@@ -72,6 +72,13 @@
 			<version>1.8.13</version>
 		</dependency>
 
+		<!-- Crypto : BouncyCastle (기존 소스가 BouncyCastleProvider 사용). JDK 1.8 호환 jdk15on 계열 -->
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcprov-jdk15on</artifactId>
+			<version>1.70</version>
+		</dependency>
+
 		<!-- Database : HSQLDB (in-memory, no external DB required) -->
 		<dependency>
 			<groupId>org.hsqldb</groupId>
