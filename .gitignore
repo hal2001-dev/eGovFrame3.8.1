@@ -22,3 +22,4 @@ target/
 #  m2-repo/ IS committed on purpose (offline dependency cache).
 #  Do NOT commit real credentials: keep oracle.properties password and any real
 #  HMAC secrets out of git (use deploy-time values / a local override).
+build/
