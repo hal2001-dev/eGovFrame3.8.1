@@ -25,6 +25,7 @@ JSP 화면 CRUD, JSON REST API, HMAC 서버-투-서버 인증, IP 화이트리�
 15. [형상관리 (Git / SVN) & 릴리스](#15-형상관리-git--svn--릴리스)
 16. [업무별 폴더 구조 가이드](#16-업무별-폴더-구조-가이드)
 17. [검증 결과 요약](#17-검증-결과-요약)
+18. [설계 논의 & FAQ (계속 업데이트)](#18-설계-논의--faq-계속-업데이트)
 
 ---
 
@@ -276,5 +277,48 @@ egovframework/example/
 | 멀티 DS | 한 요청에서 두 DB 조회, 쓰기 커밋(count 3→4) |
 | 클라이언트 샘플 | 서버 호출 전 시나리오 통과 |
 
+## 18. 설계 논의 & FAQ (계속 업데이트)
+
+> 프로젝트를 진행하며 나온 **질문·설계 결정**을 이 섹션에 계속 누적합니다.
+> (대화에서 새로운 논의가 나오면 여기에 항목을 추가합니다.)
+
+**Q. REST 응답에서 null 필드를 빼려면 어떤 애노테이션?**
+→ `@JsonInclude(JsonInclude.Include.NON_NULL)` (jackson-annotations). 클래스/필드/전역(ObjectMapper) 적용 가능.
+구버전 `@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)` 은 `Inclusion` enum 이 제거되어 **사용 금지**. 페이징 필드 제거는 `@JsonIgnoreProperties`. → [5장](#5-rest-api-명세)
+
+**Q. 웹용 필터와 REST 전용 필터를 분리하려면?**
+→ URL 접두사로 분리(방법 A, 현재): 공통 `/*`, 웹 `WebCommonFilter` `/action/*`, REST `HmacAuthFilter` `/api/*`.
+서블릿까지 나누는 방법 B는 `<filter-mapping>` 을 `<servlet-name>` 으로 매핑. → [10장](#10-필터-분리-웹rest)
+
+**Q. `webCommonFilter` 를 `/action/*` 로 두면 DispatcherServlet도 2개가 되나?**
+→ 아니오. 필터만 분리하고 DispatcherServlet은 1개(`/` 매핑) 유지. 컨트롤러가 `@RequestMapping` 경로로 구분. → [11장](#11-dispatcherservlet--컨텍스트-계층)
+
+**Q. `servlet-mapping` 이 `/` 인데 문제없나?**
+→ 정상·권장. `/`(디폴트 서블릿)는 `/*`와 달라 `*.jsp`는 컨테이너 JspServlet이 처리. 정적리소스는 `<mvc:default-servlet-handler/>` 가 컨테이너 기본 서블릿으로 위임. → [11장](#11-dispatcherservlet--컨텍스트-계층)
+
+**Q. "컨텍스트가 분리된다"는 의미?**
+→ Root(부모, 공유 Service/DAO/DataSource) 1개 + DispatcherServlet마다 자식(Controller/뷰) 컨텍스트. 서블릿 2개면 자식 2개(부모는 공유). 자식→부모 가시, 형제↔형제 불가. → [11장](#11-dispatcherservlet--컨텍스트-계층)
+
+**Q. MapperScannerConfigurer `basePackage` 를 여러 개 둘 수 있나?**
+→ 예. 콤마/세미콜론/공백 구분으로 여러 패키지 지정. 단 **두 DS 스캐너의 패키지가 겹치면 안 됨**(겹치면 매퍼 바인딩 충돌). → [12장](#12-멀티-데이터소스)
+
+**Q. 패키지 대신 애노테이션으로 두 번째 DS 매퍼를 구분?**
+→ 커스텀 마커 `@SecondaryMapper` + 스캐너 `annotationClass` 지정. 두 스캐너가 같은 basePackage 를 스캔해도 애노테이션으로 갈림. → [12장](#12-멀티-데이터소스)
+
+**Q. 서비스도 DS별로 분리해야 하나? 트랜잭션은?**
+→ 예. `<tx:annotation-driven>` + `@Transactional("txManager2")` 로 서비스도 애노테이션 기반 라우팅(패키지 독립). 두 트랜잭션은 독립(원자적 2-DB 커밋은 JTA/XA 필요). → [13장](#13-트랜잭션-분리-방식)
+
+**Q. 서비스 포인트컷에 애노테이션을 추가해 분리할 수도 있나?**
+→ 가능. AOP 지시자 `@within(@마커)`(클래스) / `@annotation(@마커)`(메서드)로 어드바이스를 나눔. `tx:annotation-driven` 방식과는 둘 중 하나만 사용. → [13장](#13-트랜잭션-분리-방식)
+
+**Q. SSO 인증 처리는 Filter vs Interceptor 어디에?**
+→ **인증(신원 확인)은 Filter**(모든 요청 커버, 컨트롤러 이전 차단·IdP 리다이렉트, SSO 제품/Spring Security가 필터). **인가(권한·메뉴)는 Interceptor**(핸들러 정보 활용). 규모가 크면 Spring Security 권장.
+
+**Q. 업무별 폴더 구조는?**
+→ 업무(도메인) 우선(package-by-feature): 최상위를 업무로 나누고 그 안에 web/service/impl. 공통은 `cmm` 최소화. → [16장](#16-업무별-폴더-구조-가이드)
+
+**Q. 오프라인에서 Maven이 m2-repo를 참조하게 하려면? SVN 공유는?**
+→ `mvn -o -Dmaven.repo.local=…/m2-repo`, 또는 `settings.xml`의 `<localRepository>`+offline, 또는 `~/.m2/repository`에 병합. Maven을 안 쓰면 `WEB-INF/lib` 참조 Dynamic Web Project. → [15장](#15-형상관리-git--svn--릴리스)
+
 ---
-_이 문서는 프로젝트 진행 내역을 정리한 위키입니다. 세부 사용법은 저장소 루트 `README.md` 를 함께 참고하세요._
+_이 문서는 프로젝트 진행 내역과 설계 논의를 정리한 위키입니다. 세부 사용법은 저장소 루트 `README.md` 를 함께 참고하세요. (18장은 대화 진행에 따라 계속 갱신)_
