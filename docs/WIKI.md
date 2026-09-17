@@ -204,21 +204,49 @@ URL 접두사로 필터를 분리(방법 A). DispatcherServlet은 1개 유지.
 - 현재는 **DispatcherServlet 1개**(`/` 매핑 + `<mvc:default-servlet-handler/>`). `/` 는 `/*` 와 달라 JSP/정적 처리에 안전(권장).
 - 웹/REST의 MVC 설정 자체를 크게 다르게 가져가려면 DispatcherServlet 2개(자식 컨텍스트 2개)로 승격 가능.
 
-## 12. 멀티 데이터소스
+## 12. 멀티 데이터소스 (방법론)
 
-DS마다 **DataSource + SqlSessionFactory + 매퍼 스캐너 + 트랜잭션 매니저**를 분리.
+### 12.1 원칙 — DS마다 4가지를 분리
+데이터소스를 2개 이상 쓸 때는 **DS 하나당 아래 4가지 빈을 각각** 둡니다. 이 세트를 DS 수만큼 복제하는 것이 핵심입니다.
+
+1. **DataSource** — 커넥션 풀/접속정보
+2. **SqlSessionFactory** — 그 DataSource + 매퍼 XML 위치
+3. **매퍼 스캐너**(MapperScannerConfigurer) — 어느 매퍼를 어느 Factory에 바인딩할지
+4. **트랜잭션 매니저**(DataSourceTransactionManager) — 그 DataSource 전용
 
 | 구분 | 기본(primary) | 두 번째(secondary) |
 |------|---------------|--------------------|
 | DataSource | `dataSource` (sampledb) | `dataSource2` (sampledb2) |
 | SqlSessionFactory | `sqlSession` | `sqlSession2` |
 | 매퍼 구분 | `@Mapper` | `@SecondaryMapper` (커스텀 마커) |
+| 서비스 트랜잭션 | `@Transactional` | `@Transactional("txManager2")` |
 | 트랜잭션 매니저 | `txManager` | `txManager2` |
 
-- 두 MapperScannerConfigurer 가 **같은 basePackage** 를 스캔해도 `annotationClass` 로 구분(겹쳐도 안전).
-- 두 번째 DS 설정은 `context-datasource-secondary.xml` 한 곳에 모음.
-- 데모: `GET /action/multidb/demo.do` → `{db1_sampleCount, db2_productCount, db2_productList}` (한 요청에서 두 DB 조회).
-- 실제 운영에선 `dataSource2` url/driver/계정만 바꾸면 다른 실 DB 연결.
+### 12.2 구성 단계
+1. `context-datasource-secondary.xml` **한 파일**에 두 번째 DS 일체(DataSource2 + SqlSessionFactory2 + 매퍼 스캐너2 + txManager2)를 모은다.
+2. `mapperLocations` 를 DS별로 분리(예: `mapper/example/*.xml` vs `mapper/secondary/*.xml`).
+3. 트랜잭션은 `<tx:annotation-driven>` 하나 두고 서비스에서 매니저를 애노테이션으로 지정([13장](#13-트랜잭션-분리-방식)).
+4. 데모 `GET /action/multidb/demo.do` → 한 요청에서 두 DB 조회(`{db1_sampleCount, db2_productCount, db2_productList}`).
+5. 운영에선 `dataSource2` 의 url/driver/계정만 실제 DB로 교체.
+
+### 12.3 매퍼/서비스를 어느 DS에 붙일지 — 2가지 방법론
+매퍼 스캐너와 트랜잭션이 "어느 빈을 어느 DS에 매핑할지" 결정하는데, 그 기준으로 **패키지** 또는 **애노테이션** 을 씁니다.
+
+| | 방법 ① 패키지 분리 | 방법 ② 애노테이션 분리 (현재 채택) |
+|---|---|---|
+| 매퍼 구분 | 스캐너 `basePackage` 를 서로 다르게 (예: `...sample,...cmm` vs `...secondary`) | 같은 `basePackage` + `annotationClass` (`@Mapper` vs `@SecondaryMapper`) |
+| 서비스 트랜잭션 | 패키지 기반 AOP 포인트컷 (`execution(* ...secondary..impl.*Impl.*(..))`) | `@Transactional("txManager2")` (또는 AOP `@within(@마커)`) |
+| 매퍼 배치 제약 | DS별 **패키지를 나눠야** 함 | **같은 패키지에 섞여도 무방** |
+| 장점 | 설정만으로 명확, 코드 손 안 댐 | 패키지 구조에 자유, 업무별 폴더와 잘 맞음 |
+| 단점 | 스캐너 패키지가 겹치면 바인딩 충돌 | 매퍼/서비스마다 애노테이션 정확히 부착 |
+| 관례 | 전통적 eGov 프로젝트 | 최근 스타일 |
+
+- ⚠️ **방법 ①에서는 두 스캐너의 `basePackage` 가 겹치면 안 됩니다**(겹치면 매퍼가 어느 Factory에 붙을지 충돌). `basePackage` 는 콤마/세미콜론으로 여러 개 지정 가능.
+- ✅ **방법 ②는 같은 `basePackage(egovframework.example)` 를 두 스캐너가 스캔해도** `@Mapper` / `@SecondaryMapper` 로 갈려 안전 — 그래서 현재 이 방식을 씁니다.
+- 두 방법은 **혼용 가능**하지만(매퍼는 애노테이션, 서비스는 패키지 등), 팀 내 일관성 유지를 권장합니다.
+
+### 12.4 주의 — 트랜잭션 경계
+`txManager` 와 `txManager2` 는 **서로 독립된 트랜잭션**입니다. 한 서비스 메서드에서 두 DB를 **하나의 원자적 커밋/롤백**으로 묶으려면 일반 DataSourceTransactionManager로는 불가하고 **JTA/XA(분산 트랜잭션, 예: Atomikos)** 가 필요합니다.
 
 ## 13. 트랜잭션 분리 방식
 
