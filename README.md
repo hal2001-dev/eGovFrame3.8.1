@@ -20,10 +20,11 @@ export/
 │   ├── src/main/java/     # Controller / Service / Mapper / VO
 │   ├── src/main/resources/# Spring 설정, MyBatis 매퍼, log4j2, 초기 SQL
 │   └── src/main/webapp/   # web.xml, JSP
-├── m2-repo/               # 오프라인 로컬 Maven 저장소 (필요 JAR 전체, 약 43MB / 140개)
+├── m2-repo/               # 오프라인 로컬 Maven 저장소 (필요 JAR 전체)
+├── tools/apache-maven-3.9.16/  # 번들 Maven (설치 불필요, 플랫폼 무관)
 ├── settings.xml           # eGovFrame 저장소용 Maven 설정 (온라인 재빌드 시에만 필요)
-├── build-offline.sh       # 오프라인 빌드 스크립트 → WAR 생성
-├── run-offline.sh         # 오프라인 실행 스크립트 → 내장 Jetty 기동
+├── build-offline.sh / .bat # 오프라인 빌드 → WAR 생성  (mac·linux / Windows)
+├── run-offline.sh  / .bat # 오프라인 실행 → 내장 Jetty (mac·linux / Windows)
 ├── sign-request.sh        # HMAC 서명 요청 생성/호출 (외부 시스템 참고 구현)
 └── README.md
 ```
@@ -32,12 +33,12 @@ REST API는 **HMAC 서명 인증**(서버-투-서버)으로 보호됩니다 — 
 
 ## 2. 요구사항
 
-- **JDK 1.8** (필수) — 이 프로젝트는 Java 8로 컴파일/실행됩니다.
-- **Maven** — `mvn` 명령. (없다면 Maven도 오프라인 설치 필요)
-- OS/아키텍처 무관하나, **JDK 1.8은 실행 대상 PC의 OS/아키텍처에 맞는 것**이어야 합니다.
-  - 참고: 이 패키지를 만든 PC에는 Apple Silicon용 Zulu JDK 8이
-    `~/.local/jdks/zulu8...` 에 설치되어 있습니다.
-  - 다른 PC(오프라인)로 옮긴다면 그 PC에 맞는 JDK 1.8을 미리 준비하세요.
+- **JDK 1.8** (필수, 유일한 사전설치 항목) — 실행 대상 PC의 **OS/아키텍처에 맞는** JDK 8.
+  - Windows: Azul Zulu 8 (Windows x64) 또는 Temurin 8 — 예: `C:\Program Files\Zulu\zulu-8`
+  - macOS(Apple Silicon): Zulu 8 aarch64
+- **Maven 불필요** — Maven 배포본이 `tools/apache-maven-3.9.16/` 에 **번들**되어 있습니다.
+- **인터넷 불필요** — 모든 의존 JAR이 `m2-repo/` 에 포함(플랫폼 무관).
+  - 즉 **오프라인 PC에는 JDK 1.8만 준비**하면 됩니다.
 
 ## 3. 오프라인 빌드 (WAR 생성)
 
@@ -62,6 +63,32 @@ export JAVA_HOME=/path/to/jdk1.8
   - 목록: <http://localhost:8080/egovSampleList.do>
   - 등록: <http://localhost:8080/addSample.do>
 - 중지: `Ctrl + C`
+
+## 4-0. Windows 에서 (오프라인)
+
+Windows에서는 `.bat` 스크립트를 쓰면 됩니다. **JDK 1.8(Windows x64)만** 준비하면
+Maven 설치·인터넷 없이 그대로 빌드/실행됩니다(번들 Maven + `m2-repo` 사용).
+
+명령 프롬프트(cmd) 기준:
+```bat
+rem 1) JDK 1.8 경로 지정 (본인 설치 경로로)
+set "JAVA_HOME=C:\Program Files\Zulu\zulu-8"
+
+rem 2) 빌드 → egovframe-sample\target\egovframe-sample.war
+build-offline.bat
+
+rem 3) 실행 → http://localhost:8080/  (Ctrl+C 로 중지)
+run-offline.bat
+
+rem Oracle 로 실행할 때 (인자 그대로 전달됨)
+run-offline.bat -Dspring.profiles.active=oracle
+```
+
+- JDK 8(Windows) 다운로드: Azul Zulu (<https://www.azul.com/downloads/?version=java-8-lts&os=windows&architecture=x86-64-bit&package=jdk>)
+  또는 Adoptium Temurin 8. 설치 후 위처럼 `JAVA_HOME` 만 지정하세요.
+- 오프라인 PC로 옮길 때는 이 폴더 전체(또는 `git clone`)를 복사 + **JDK 8만** 설치하면 끝.
+- PowerShell 이라면 `set` 대신 `$env:JAVA_HOME="C:\Program Files\Zulu\zulu-8"` 로 지정하고
+  `.\build-offline.bat` 실행.
 
 ## 4-1. REST API (JSON)
 

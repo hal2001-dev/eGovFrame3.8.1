@@ -16,6 +16,9 @@ if [ -z "$JAVA_HOME" ] || [ ! -x "$JAVA_HOME/bin/java" ]; then
 fi
 echo "JAVA_HOME = $JAVA_HOME"
 
+MVN="$HERE/tools/apache-maven-3.9.16/bin/mvn"
+[ -x "$MVN" ] || MVN="mvn"
+
 cd "$HERE/egovframe-sample"
 echo "Starting Jetty on http://localhost:8080/  (Ctrl+C to stop)"
-mvn -o -Dmaven.repo.local="$HERE/m2-repo" jetty:run
+"$MVN" -o -Dmaven.repo.local="$HERE/m2-repo" jetty:run "$@"

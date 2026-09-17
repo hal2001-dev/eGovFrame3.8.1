@@ -21,9 +21,13 @@ fi
 echo "JAVA_HOME = $JAVA_HOME"
 "$JAVA_HOME/bin/java" -version
 
+# --- Maven (prefer the bundled distribution; fall back to system mvn) -------
+MVN="$HERE/tools/apache-maven-3.9.16/bin/mvn"
+[ -x "$MVN" ] || MVN="mvn"
+
 # --- Offline build ---------------------------------------------------------
 cd "$HERE/egovframe-sample"
-mvn -o -Dmaven.repo.local="$HERE/m2-repo" clean package "$@"
+"$MVN" -o -Dmaven.repo.local="$HERE/m2-repo" clean package "$@"
 
 echo
 echo "DONE -> $HERE/egovframe-sample/target/egovframe-sample.war"
