@@ -268,6 +268,33 @@ Spring 프로파일로 데이터소스만 바뀌며, **매퍼 SQL은 그대로 �
 > 표(`SAMPLE`, `API_CLIENT`, `API_CLIENT_IP`)와 인덱스/제약은
 > `db/oracle/schema-oracle.sql` 참고. 계정/테이블스페이스는 사이트 표준에 맞게 조정하세요.
 
+## 4-5. 데이터소스 2개 사용 (multi-datasource)
+
+기본 DB(`dataSource`/sampledb) 외에 **두 번째 DB(`dataSource2`/sampledb2)** 를 함께 쓰는 예제가 포함되어 있습니다.
+핵심은 **데이터소스마다 4가지를 분리**하는 것입니다.
+
+| 구분 | 기본(primary) | 두 번째(secondary) |
+|------|---------------|--------------------|
+| DataSource | `dataSource` | `dataSource2` |
+| SqlSessionFactory | `sqlSession` (매퍼: `mapper/example/*.xml`) | `sqlSession2` (매퍼: `mapper/secondary/*.xml`) |
+| 매퍼 스캔 패키지 | `egovframework.example.sample`, `.cmm` | `egovframework.example.secondary` |
+| 트랜잭션 매니저 | `txManager` | `txManager2` |
+
+- 설정 파일: 두 번째 DS 는 **`context-datasource-secondary.xml`** 한 곳에 모아 두었습니다(DataSource+Factory+스캐너+TxManager+AOP).
+- **매퍼 스캐너 범위가 겹치지 않게** 분리하는 것이 관건입니다(겹치면 매퍼가 어느 factory 에 붙을지 충돌). 그래서 primary 스캐너를 `sample,cmm` 로 좁혔습니다.
+- 트랜잭션도 secondary 구현체(`...secondary..service.impl.*Impl`)는 `txManager2` 로, 나머지는 `txManager` 로 AOP 를 나눴습니다.
+
+확인:
+```bash
+curl http://localhost:8080/action/multidb/demo.do
+# → {"db1_sampleCount":3, "db2_productCount":3, "db2_productList":[...]}
+```
+한 요청에서 두 DB(SAMPLE=기본, PRODUCT=두 번째)를 각각 조회해 합쳐 반환합니다.
+
+> 실제 운영에서 두 번째를 별도 실 DB(예: 또 다른 Oracle)로 쓰려면
+> `context-datasource-secondary.xml` 의 `dataSource2` url/driver/계정만 바꾸면 됩니다.
+> (지금은 오프라인 데모라 두 번째도 HSQLDB 인메모리 사용)
+
 ## 5. IDE(이클립스 / 전자정부 표준프레임워크 개발환경)로 열기
 
 1. `File > Import > Maven > Existing Maven Projects`

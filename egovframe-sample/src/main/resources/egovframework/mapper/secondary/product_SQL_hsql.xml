@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 두 번째 DB(sampledb2)용 매퍼. namespace 는 ProductMapper 인터페이스 FQN 과 일치. -->
+<mapper namespace="egovframework.example.secondary.service.impl.ProductMapper">
+
+	<resultMap id="productResult" type="egovframework.example.secondary.service.ProductVO">
+		<result property="productId" column="PRODUCT_ID" />
+		<result property="productName" column="PRODUCT_NAME" />
+		<result property="price" column="PRICE" />
+	</resultMap>
+
+	<select id="selectProductList" resultMap="productResult">
+		SELECT PRODUCT_ID, PRODUCT_NAME, PRICE
+		FROM PRODUCT
+		ORDER BY PRODUCT_ID
+	</select>
+
+	<select id="selectProductListTotCnt" resultType="int">
+		SELECT COUNT(*) FROM PRODUCT
+	</select>
+
+</mapper>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/jdbc
+		http://www.springframework.org/schema/jdbc/spring-jdbc.xsd
+		http://www.springframework.org/schema/aop
+		http://www.springframework.org/schema/aop/spring-aop.xsd
+		http://www.springframework.org/schema/tx
+		http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+	<!--
+	  ============ 두 번째 데이터소스(secondary) 예제 ============
+	  핵심: 데이터소스마다 (1) DataSource (2) SqlSessionFactory
+	        (3) MapperScannerConfigurer(스캔 패키지 분리) (4) 트랜잭션 매니저 를 각각 둔다.
+
+	  여기서는 데모용으로 두 번째 DB 도 HSQLDB 인메모리(sampledb2)를 사용한다.
+	  실제로는 아래 dataSource2 의 url/driver/계정을 두 번째 실 DB(예: 다른 Oracle)로 바꾸면 된다.
+	-->
+
+	<!-- (1) 두 번째 DataSource -->
+	<bean id="dataSource2" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+		<property name="driverClassName" value="org.hsqldb.jdbcDriver" />
+		<property name="url" value="jdbc:hsqldb:mem:sampledb2" />
+		<property name="username" value="sa" />
+		<property name="password" value="" />
+	</bean>
+
+	<!-- 두 번째 DB 스키마/시드 (HSQLDB 데모용) -->
+	<jdbc:initialize-database data-source="dataSource2" ignore-failures="DROPS">
+		<jdbc:script location="classpath:db/schema2-hsql.sql" />
+		<jdbc:script location="classpath:db/data2-hsql.sql" />
+	</jdbc:initialize-database>
+
+	<!-- (2) 두 번째 SqlSessionFactory : dataSource2 + secondary 매퍼 XML -->
+	<bean id="sqlSession2" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource2" />
+		<property name="configLocation" value="classpath:egovframework/mapper/sql-mapper-config.xml" />
+		<property name="mapperLocations" value="classpath:egovframework/mapper/secondary/*.xml" />
+	</bean>
+
+	<!-- (3) secondary 매퍼 스캐너 : secondary 패키지만 스캔해 sqlSession2 에 바인딩 -->
+	<!--     (primary 스캐너는 egovframework.example.sample / .cmm 만 스캔하도록 분리되어 있음) -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="egovframework.example.secondary" />
+		<property name="annotationClass" value="org.apache.ibatis.annotations.Mapper" />
+		<property name="sqlSessionFactoryBeanName" value="sqlSession2" />
+	</bean>
+
+	<!-- (4) 두 번째 트랜잭션 매니저 -->
+	<bean id="txManager2" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource2" />
+	</bean>
+
+	<!-- secondary 서비스 트랜잭션 AOP : secondary 구현체는 txManager2 로 -->
+	<tx:advice id="txAdvice2" transaction-manager="txManager2">
+		<tx:attributes>
+			<tx:method name="*" rollback-for="Exception" />
+		</tx:attributes>
+	</tx:advice>
+	<aop:config>
+		<aop:pointcut id="secondaryServiceMethod"
+			expression="execution(* egovframework.example.secondary..service.impl.*Impl.*(..))" />
+		<aop:advisor advice-ref="txAdvice2" pointcut-ref="secondaryServiceMethod" />
+	</aop:config>
+
+</beans>

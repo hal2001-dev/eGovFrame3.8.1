@@ -12,9 +12,11 @@
 	</bean>
 
 	<!-- @Mapper 애노테이션이 붙은 인터페이스를 스캔해 매퍼 빈으로 자동 등록 -->
-	<!-- basePackage 하위에서 @Mapper 인터페이스만 등록하므로 위치와 무관하게 인식됨 -->
+	<!-- primary(기본 DB)용: sample / cmm 패키지만 스캔해 sqlSession 에 바인딩. -->
+	<!-- secondary(두 번째 DB) 매퍼는 context-datasource-secondary.xml 의 별도 스캐너가 -->
+	<!-- egovframework.example.secondary 만 스캔해 sqlSession2 에 바인딩하므로 서로 겹치지 않음. -->
 	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
-		<property name="basePackage" value="egovframework.example" />
+		<property name="basePackage" value="egovframework.example.sample,egovframework.example.cmm" />
 		<property name="annotationClass" value="org.apache.ibatis.annotations.Mapper" />
 		<property name="sqlSessionFactoryBeanName" value="sqlSession" />
 	</bean>

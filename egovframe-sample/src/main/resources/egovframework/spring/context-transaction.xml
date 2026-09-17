@@ -20,9 +20,12 @@
 		</tx:attributes>
 	</tx:advice>
 
+	<!-- primary(기본 DB) 트랜잭션: 서비스 구현체에 적용.
+	     단, 두 번째 DB(secondary)는 자기 트랜잭션 매니저(txManager2)를 쓰므로 제외한다.
+	     (secondary AOP 는 context-datasource-secondary.xml 에 별도 정의) -->
 	<aop:config>
 		<aop:pointcut id="serviceMethod"
-			expression="execution(* egovframework.example..service.impl.*Impl.*(..))" />
+			expression="execution(* egovframework.example..service.impl.*Impl.*(..)) &amp;&amp; !within(egovframework.example.secondary..*)" />
 		<aop:advisor advice-ref="txAdvice" pointcut-ref="serviceMethod" />
 	</aop:config>
 
